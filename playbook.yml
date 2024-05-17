@@ -2,17 +2,6 @@
   hosts: nginx
   become: true
   tasks:
-    - name: Ensure Docker is installed
-      apt:
-        name: docker.io
-        state: present
-      when: ansible_os_family == 'Debian'
-
-    - name: Ensure Docker is started
-      service:
-        name: docker
-        state: started
-
     - name: Pull Docker image
       docker_image:
         name: "{{ docker_image_name }}"
@@ -20,8 +9,16 @@
 
     - name: Run Docker container
       docker_container:
-        name: my-nginx
+        name: my-app
         image: "{{ docker_image_name }}"
         state: started
+        ports:
+          - "3000:3000"
+    - name: Run Nginx Docker container
+      docker_container:
+        name: my-nginx
+        image: nginx
+        state: started
+        restart_policy: always
         ports:
           - "80:80"

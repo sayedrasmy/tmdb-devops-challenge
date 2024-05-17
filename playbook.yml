@@ -1,49 +1,27 @@
----
-- name: Deploy Nginx and Application on AWS EC2
+- name: Deploy Docker container to EC2
   hosts: nginx
-  become: yes
-  vars:
-    repo_url: https://github.com/sayedrasmy/tmdb-devops-challenge
-    app_dir: /var/www/app
-
+  become: true
   tasks:
-    - name: Install required packages
+    - name: Ensure Docker is installed
       apt:
-        name: "{{ item }}"
+        name: docker.io
         state: present
-        update_cache: yes
-      with_items:
-        - docker.io
-        - git
+      when: ansible_os_family == 'Debian'
 
-    - name: Start Docker service
+    - name: Ensure Docker is started
       service:
         name: docker
         state: started
-        enabled: yes
 
-    - name: Clone repository
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
-        version: master
+    - name: Pull Docker image
+      docker_image:
+        name: "{{ docker_image_name }}"
+        source: local
 
-    - name: Create Nginx Dockerfile
-      copy:
-        content: |
-          FROM nginx:latest
-          COPY ./ /usr/share/nginx/html
-        dest: "{{ app_dir }}/Dockerfile"
-
-    - name: Build Nginx Docker image
-      command: docker build -t tmdb-nginx:latest .
-      args:
-        chdir: "{{ app_dir }}"
-
-    - name: Run Nginx container
+    - name: Run Docker container
       docker_container:
-        name: tmdb-nginx
-        image: tmdb-nginx:latest
+        name: my-nginx
+        image: "{{ docker_image_name }}"
         state: started
         ports:
           - "80:80"

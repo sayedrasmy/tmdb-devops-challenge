@@ -1,55 +1,49 @@
 ---
-- name: Deploy Nginx and Application
-  hosts: all
-  become: true
+- name: Deploy Nginx and Application on AWS EC2
+  hosts: webservers
+  become: yes
   vars:
-    app_repo: https://github.com/sayedrasmy/tmdb-devops-challenge/tmdb-devops-challenge.git
+    repo_url: https://github.com/salawadhi/tmdb-devops-challenge/
+    app_dir: /var/www/tmdb-app
 
   tasks:
-    - name: Update apt cache
+    - name: Install required packages
       apt:
+        name: "{{ item }}"
+        state: present
         update_cache: yes
-      when: ansible_os_family == 'Debian'
+      with_items:
+        - docker.io
+        - git
 
-    - name: Install Docker
-      block:
-        - name: Install dependencies
-          package:
-            name: "{{ item }}"
-            state: present
-          with_items:
-            - apt-transport-https
-            - ca-certificates
-            - curl
-            - gnupg
-            - lsb-release
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-        - name: Add Docker GPG apt key
-          apt_key:
-            url: https://download.docker.com/linux/ubuntu/gpg
-            state: present
-
-        - name: Add Docker APT repository
-          apt_repository:
-            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
-            state: present
-
-        - name: Install Docker
-          package:
-            name: docker-ce
-            state: present
-
-    - name: Clone application repository
+    - name: Clone repository
       git:
-        repo: "{{ app_repo }}"
-        dest: /opt/app
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: master
+
+    - name: Create Nginx Dockerfile
+      copy:
+        content: |
+          FROM nginx:latest
+          COPY ./ /usr/share/nginx/html
+        dest: "{{ app_dir }}/Dockerfile"
+
+    - name: Build Nginx Docker image
+      command: docker build -t tmdb-nginx:latest .
+      args:
+        chdir: "{{ app_dir }}"
 
     - name: Run Nginx container
       docker_container:
-        name: nginx
-        image: nginx
+        name: tmdb-nginx
+        image: tmdb-nginx:latest
+        state: started
         ports:
           - "80:80"
-        restart_policy: always
-        state: started
-        

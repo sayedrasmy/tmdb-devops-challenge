@@ -1,6 +1,6 @@
 ---
 - name: Deploy Nginx and Application on AWS EC2
-  hosts: webservers
+  hosts: nginx
   become: yes
   vars:
     repo_url: https://github.com/sayedrasmy/tmdb-devops-challenge

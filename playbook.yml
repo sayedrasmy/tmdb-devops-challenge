@@ -1,24 +1,32 @@
-- name: Deploy Docker container to EC2
+---
+- name: Deploy Nginx/IIS container
   hosts: nginx
-  become: true
   tasks:
-    - name: Pull Docker image
+    - name: Pull Nginx/IIS Docker image
       docker_image:
-        name: "{{ docker_image_name }}"
-        source: local
+        name: nginx  # or the image name for IIS
+        state: present
 
-    - name: Run Docker container
+    - name: Run Nginx/IIS container
       docker_container:
-        name: my-app
-        image: "{{ docker_image_name }}"
-        state: started
-        ports:
-          - "3000:3000"
-    - name: Run Nginx Docker container
-      docker_container:
-        name: my-nginx
-        image: nginx
-        state: started
-        restart_policy: always
+        name: my-nginx  # or any suitable name
+        image: nginx  # or the image name for IIS
         ports:
           - "80:80"
+    - name: Deploy Application
+  hosts: nginx
+  tasks:
+    - name: Clone application repository
+      git:
+        repo: https://github.com/sayedrasmy/tmdb-devops-challenge.git
+        dest: /var/www/app
+
+    - name: Build application
+      command: npm install
+      args:
+        chdir: /var/www/app
+
+    - name: Run application
+      command: npm start
+      args:
+        chdir: /var/www/app

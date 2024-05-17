@@ -2,7 +2,9 @@
 - name: Deploy Nginx and Application
   hosts: all
   become: true
+  gather_facts: no
   vars:
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     app_repo: https://github.com/sayedrasmy/tmdb-devops-challenge/tmdb-devops-challenge.git
 
   tasks:

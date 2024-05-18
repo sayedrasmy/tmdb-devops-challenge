@@ -1,32 +1,29 @@
 ---
-- name: Deploy Nginx/IIS container
-  hosts: nginx
+- name: Deploy Nginx and Application
+  hosts: all
+  become: true
   tasks:
-    - name: Pull Nginx/IIS Docker image
-      docker_image:
-        name: nginx  # or the image name for IIS
+    - name: Install Nginx
+      apt:
+        name: nginx
         state: present
 
-    - name: Run Nginx/IIS container
-      docker_container:
-        name: my-nginx  # or any suitable name
-        image: nginx  # or the image name for IIS
-        ports:
-          - "80:80"
-    - name: Deploy Application
-  hosts: nginx
-  tasks:
-    - name: Clone application repository
-      git:
-        repo: https://github.com/sayedrasmy/tmdb-devops-challenge.git
+    - name: Copy Nginx configuration
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify:
+        - Restart Nginx
+
+    - name: Copy application files
+      copy:
+        src: "{{ source_dir }}"
         dest: /var/www/app
+      notify:
+        - Restart Nginx
 
-    - name: Build application
-      command: npm install
-      args:
-        chdir: /var/www/app
-
-    - name: Run application
-      command: npm start
-      args:
-        chdir: /var/www/app
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted

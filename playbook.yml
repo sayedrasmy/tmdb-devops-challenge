@@ -32,7 +32,10 @@
 
     - name: Build Docker image
       command: docker build -t myapp:latest /var/www/app
+      
+    - name: Build Docker image
       command: docker run -p 3000 myapp:latest
+      
     - name: Run Nginx container
       docker_container:
         name: nginx

@@ -14,20 +14,21 @@
         name: docker
         state: started
         enabled: yes
-
     - name: Copy application files
       command: pwd
       register: pwd_output
+    
     - name: Set the current working directory as a fact
       set_fact:
         src_local: "{{ pwd_output.stdout }}"
+    
+    - name: Copy files to the destination
       copy:
         src: "{{ src_local }}"
         dest: /var/www/app/
         owner: www-data
         group: www-data
         mode: '0755'
-        remote_src: yes
 
     - name: Build Docker image
       command: docker build -t myapp:latest /var/www/app
